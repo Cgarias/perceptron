@@ -59,6 +59,7 @@ if uploaded_file is not None:
 
     start_training = st.button("🚀 Iniciar Entrenamiento")
     if start_training:
+        st.session_state.entrenado = False
         for epoch in range(max_iter):
             error_total = 0
             for i in range(n_patterns):
@@ -94,6 +95,7 @@ if uploaded_file is not None:
 
         st.write("Pesos finales:", W)
         st.write("Umbral final:", U)
+        st.session_state.entrenado = True
 
         # Simulación
         st.subheader("🔎 Simulación con los patrones")
