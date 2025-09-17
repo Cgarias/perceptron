@@ -105,27 +105,38 @@ if uploaded_file is not None:
         st.subheader("📝 Probar con valores manuales")
 
 # Crear un contenedor para almacenar pruebas
-if "pruebas" not in st.session_state:
-    st.session_state.pruebas = []
+# ---------- Pruebas manuales (solo después de entrenar) ----------
+if st.session_state.get("entrenado", False):
 
-with st.form("form_prueba"):
-    a = st.number_input("Ingrese el primer valor (ej: 5)", value=0.0, key="a")
-    b = st.number_input("Ingrese el segundo valor (ej: 69)", value=0.0, key="b")
-    c = st.number_input("Ingrese el tercer valor (ej: 8)", value=0.0, key="c")
+    st.subheader("📝 Probar con valores manuales")
 
-    submitted = st.form_submit_button("Agregar prueba")
+    if "pruebas" not in st.session_state:
+        st.session_state.pruebas = []
 
-    if submitted:
-        m = np.array([a, b, c])
-        s = np.dot(m, W) - U
-        y = escalon(s)
-        st.session_state.pruebas.append((m, y))
+    with st.form("form_prueba"):
+        a = st.number_input("Ingrese el primer valor (ej: 5)", value=0.0, key="a")
+        b = st.number_input("Ingrese el segundo valor (ej: 69)", value=0.0, key="b")
+        c = st.number_input("Ingrese el tercer valor (ej: 8)", value=0.0, key="c")
 
-    # Mostrar todas las pruebas realizadas
+        submitted = st.form_submit_button("Agregar prueba")
+
+        if submitted:
+            m = np.array([a, b, c])
+            s = np.dot(m, W) - U
+            y = escalon(s)
+            st.session_state.pruebas.append({"x1": a, "x2": b, "x3": c, "salida": y})
+
     if st.session_state.pruebas:
         st.write("### 📊 Resultados de las pruebas")
-        for i, (entrada, salida) in enumerate(st.session_state.pruebas, 1):
-            st.write(f"{i}. Entrada: {entrada} → Salida: {salida}")
+        df_pruebas = pd.DataFrame(st.session_state.pruebas)
+        st.dataframe(df_pruebas, use_container_width=True)
+
+        if st.button("🗑️ Limpiar pruebas"):
+            st.session_state.pruebas = []
+
+else:
+    st.info("⚠️ Primero debes entrenar el perceptrón para poder hacer pruebas manuales.")
+
 
 
 
