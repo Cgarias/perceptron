@@ -12,8 +12,6 @@ from dataset_utils import detect_io, preprocess_for_perceptron
 
 st.title("🔵 Perceptrón Simple")
 
-
-
 # Cargar dataset
 st.subheader("📂 Cargar Dataset")
 uploaded_file = st.file_uploader("Sube tu dataset (CSV, Excel o Json)", type=["csv", "xlsx", "json"])
@@ -29,25 +27,33 @@ if uploaded_file is not None:
     st.write("Vista previa del dataset:")
     st.dataframe(df.head())
 
-    #Mostrar valores entrada,salida y patrones.
+    # Detectar entradas, salidas y patrones
     inputs, outputs, n_patterns = detect_io(df)
 
     st.write("Entradas:", len(inputs))
     st.write("Salidas:", len(outputs))
     st.write("Patrones:", n_patterns)
 
-
+    # Preprocesar dataset
     X, Y = preprocess_for_perceptron(df, inputs, outputs)
 
     st.sidebar.header("⚙️ Configuración")
     rng = np.random.RandomState(42)
-    W = rng.uniform(-1, 1, size=(X.shape[1],))
-    U = rng.uniform(-1, 1)
+
+    # Inicializar o recuperar pesos/umbral desde session_state
+    if "W" not in st.session_state or st.session_state.get("W") is None or st.session_state.W.shape[0] != X.shape[1]:
+        st.session_state.W = rng.uniform(-1, 1, size=(X.shape[1],))
+    if "U" not in st.session_state or st.session_state.get("U") is None:
+        st.session_state.U = rng.uniform(-1, 1)
+
+    # Variables de entrenamiento
+    W = st.session_state.W
+    U = st.session_state.U
     eta = st.sidebar.slider("Tasa de Aprendizaje (η)", 0.01, 1.0, 0.1)
     max_iter = st.sidebar.slider("Número máximo de iteraciones", 1, 10, 100)
     error_max = st.sidebar.slider("Error máximo permitido (ϵ)", 0.0, 1.0, 0.01)
 
-
+    # Función de activación
     def escalon(s): 
         return 1 if s >= 0 else 0
 
@@ -59,12 +65,12 @@ if uploaded_file is not None:
 
     start_training = st.button("🚀 Iniciar Entrenamiento")
     if start_training:
-        st.session_state.entrenado = False
+        st.session_state.entrenado = False  # reset por si se entrena de nuevo
         for epoch in range(max_iter):
             error_total = 0
             for i in range(n_patterns):
                 x = X[i]
-                yd = Y[i]
+                yd = int(np.array(Y).ravel()[i])  # asegurar escalar entero
                 s = np.dot(x, W) - U
                 y = escalon(s)
                 e = yd - y
@@ -95,16 +101,19 @@ if uploaded_file is not None:
 
         st.write("Pesos finales:", W)
         st.write("Umbral final:", U)
+
+        # Guardar pesos y estado en session_state
+        st.session_state.W = W
+        st.session_state.U = U
         st.session_state.entrenado = True
 
-        # Simulación
+        # Simulación con los patrones del dataset
         st.subheader("🔎 Simulación con los patrones")
         for x in X:
-           s = np.dot(x, W) - U
-           y = escalon(s)
-           st.write(f"{x} -> {y}")
-           
-# Crear un contenedor para almacenar pruebas
+            s = np.dot(x, W) - U
+            y = escalon(s)
+            st.write(f"{x} -> {y}")
+
 # ---------- Pruebas manuales (solo después de entrenar) ----------
 if st.session_state.get("entrenado", False):
 
@@ -121,10 +130,20 @@ if st.session_state.get("entrenado", False):
         submitted = st.form_submit_button("Agregar prueba")
 
         if submitted:
-            m = np.array([a, b, c])
-            s = np.dot(m, W) - U
-            y = escalon(s)
-            st.session_state.pruebas.append({"x1": a, "x2": b, "x3": c, "salida": y})
+            m = np.array([a, b, c], dtype=float)
+            W_trained = st.session_state.W
+            U_trained = st.session_state.U
+
+            # Validación de dimensiones
+            if m.shape[0] != W_trained.shape[0]:
+                st.error(
+                    "La cantidad de valores ingresados no coincide con el número de entradas del modelo.\n"
+                    f"Esperado: {W_trained.shape[0]} valores (tu dataset tiene {W_trained.shape[0]} entradas)."
+                )
+            else:
+                s = np.dot(m, W_trained) - U_trained
+                y = escalon(s)
+                st.session_state.pruebas.append({"x1": a, "x2": b, "x3": c, "salida": int(y)})
 
     if st.session_state.pruebas:
         st.write("### 📊 Resultados de las pruebas")
@@ -136,7 +155,3 @@ if st.session_state.get("entrenado", False):
 
 else:
     st.info("⚠️ Primero debes entrenar el perceptrón para poder hacer pruebas manuales.")
-
-
-
-
