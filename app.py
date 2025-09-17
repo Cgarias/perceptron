@@ -103,9 +103,7 @@ if uploaded_file is not None:
            s = np.dot(x, W) - U
            y = escalon(s)
            st.write(f"{x} -> {y}")
-
-        st.subheader("📝 Probar con valores manuales")
-
+           
 # Crear un contenedor para almacenar pruebas
 # ---------- Pruebas manuales (solo después de entrenar) ----------
 if st.session_state.get("entrenado", False):
