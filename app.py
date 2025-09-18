@@ -127,13 +127,12 @@ if modo == "Entrenar un modelo nuevo":
                 mime="application/octet-stream"
             )
 
-            # Simulación con los patrones del dataset
             st.subheader("🔎 Simulación con los patrones")
-            for x in X:
+            for i, x in enumerate(X):
+                salida_real = int(np.array(Y).ravel()[i])  # valor real
                 s = np.dot(x, W) - U
-                y = escalon(s)
-                st.write(f"{x} -> {y}")
-
+                salida_predicha = escalon(s)
+                st.write(f"Entradas: {x} -> Salida real: {salida_real}, Salida predicha: {salida_predicha}")
 # ==============================================================
 # 2) CARGAR MODELO YA ENTRENADO
 # ==============================================================
